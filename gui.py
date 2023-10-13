@@ -37,8 +37,6 @@ def Discrete_signal_generator(trig_func, Amplitude, Analog_freq, Sample_freq, ph
 
 import math
 
-
-
 # inputs
 trig_func = st.radio('Trig function',['sin','cos'])
 x = range(st.number_input("number of samples",min_value=1,max_value=10000,value=200))
