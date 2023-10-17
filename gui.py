@@ -5,6 +5,7 @@ import math
 import numpy as np
 import streamlit as st
 import pandas as pd
+import plotly.subplots as sp
 
 # Function for cleaning file
 def clean_text(file_list):
@@ -34,6 +35,8 @@ def Discrete_plot(x, y, plot_name):
     
     return fig
 
+# Function that takes 2 figures and combine them into 1 figure
+
 
 # Function for making Continuous plot
 def Continuous_plot(x, y, plot_name):
@@ -59,11 +62,11 @@ st.header('inputs', anchor=None, help=None, divider=True)
 file = st.file_uploader("", type=["txt"])
 # inputs
 trig_func = st.radio('Trig function',['sin','cos'])
-x = range(st.number_input("number of samples",min_value=1,max_value=10000,value=200))
 amp = st.number_input("Amplitude",min_value=1,max_value=1000,value=10)
 Analog_freq = st.number_input("Analog frequency",min_value=0,max_value=10000,value=5)
-Sample_freq = st.number_input("Sample frequency",min_value=1,max_value=10000,value=200)
+Sample_freq = st.number_input("Sample frequency",min_value=1,max_value=10000,value=20)
 phase_shift = st.number_input("Phase shift",min_value=float(0),max_value=float(100),step=0.2)
+x = range(st.number_input("number of samples",min_value=1,max_value=10000,value=Sample_freq))
 Fs = (Analog_freq/Sample_freq)
 # Check that chosen sampling frequency is below the minumum required fs
 fs_min = 2 * Analog_freq
@@ -75,10 +78,10 @@ vectorized_function = np.vectorize(Discrete_signal_generator)
 y_input = vectorized_function(trig_func, amp, Fs, phase_shift, x)
 
 st.header('plot via input', anchor=None, help=None, divider=True)
-st.plotly_chart(Discrete_plot(x, y_input, "Discrete Signal"))
-st.plotly_chart(Continuous_plot(x, y_input, "Continuous Signal"))
+fig1 = st.plotly_chart(Discrete_plot(x, y_input, "Discrete Signal"))
+fig2 = st.plotly_chart(Continuous_plot(x, y_input, "Continuous Signal"))
 
-
+# st.plotly_chart(combine_figures(fig1, fig2), "Mixed Signal")
 # file
 if file is not None:
     st.header('plot via File', anchor=None, help=None, divider=True)
