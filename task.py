@@ -10,6 +10,20 @@ def sum_signals(signals):
     result = np.sum(signals, axis=0)
     return result
 
+def subtract_signals(signals):
+    if len(signals) < 2:
+        return []
+
+    # Subtract the second signal from the first signal
+    result = signals[0] - np.sum(signals[1:], axis=0)
+    return result
+
+def multiply_signal(signal, constant):
+    # Multiply each element in the signal list by the constant
+    result = [value * constant for value in signal]
+    return result
+
+
 def format_samples(signal):
     return "\n".join([f"{x} {y}" for x, y in enumerate(signal)])
 
@@ -39,37 +53,57 @@ def create_matplotlib_plot(x, y, plot_name, continuous=True):
     return plt
 
 def main():
-    st.title('Signal Summation and Plotting')
+    st.title('Signal Operations')
 
-    num_signals = st.number_input('Number of Signals', min_value=2, max_value=10, value=2, step=1)
+    operation = st.selectbox('Operation', ['Addition', 'Subtraction', 'Multiplication'])
+
+    if operation in ['Addition', 'Subtraction']:
+        num_signals = st.number_input('Number of Signals', min_value=2, value=2, step=1)
+    else:  # For multiplication
+        num_signals = 1
+
+    constant = 0
+
+    if operation == 'Multiplication':
+        constant = st.number_input('Constant for Multiplication', value=1.0)
+
     signals = []
 
     for i in range(num_signals):
-        signal_file = st.file_uploader(f'Upload Signal #{i+1}', type=['txt'])
+        signal_file = st.file_uploader(f'Upload Signal', type=['txt'], key=f'signal_uploader_{i}')
         if signal_file is not None:
             uploaded_data = signal_file.read().decode('utf-8')
             lines = uploaded_data.split('\n')
             x_values, y_values = parse_signal_data(lines)
             signals.append((x_values, y_values))
 
-    if st.button('Sum and Plot Signals'):
-        summed_signal = sum_signals([signal[1] for signal in signals])
+    if st.button('Perform Operation'):
+        if operation in ['Addition', 'Subtraction']:
+            if operation == 'Addition':
+                result_signal = sum_signals([signal[1] for signal in signals])
+                result_operation = 'Addition'
+            elif operation == 'Subtraction':
+                result_signal = subtract_signals([signal[1] for signal in signals])
+                result_operation = 'Subtraction'
+        else:  # Multiplication
+            result_signal = multiply_signal(signals[0][1], constant)
+            result_operation = 'Multiplication'
 
-        st.success('Signal Sum (Samples):')
-        st.code(format_samples(summed_signal), language='text')
+        st.success(f'Signal {result_operation} (Samples):')
+        st.code(format_samples(result_signal), language='text')
 
-        st.subheader('Original Signals (Discrete)')
-        for i, (x, y) in enumerate(signals):
-            create_matplotlib_plot(x, y, f'Signal {i+1} (Discrete)', continuous=False)
+        st.subheader('Original Signal (Discrete)')
+        for x, y in signals[0]:
+            create_matplotlib_plot(x, y, 'Original Signal (Discrete)', continuous=False)
             st.pyplot()
 
-        st.subheader('Original Signals (Continuous)')
-        for i, (x, y) in enumerate(signals):
-            create_matplotlib_plot(x, y, f'Signal {i+1} (Continuous)', continuous=True)
+        st.subheader('Original Signal (Continuous)')
+        for x, y in signals[0]:
+            create_matplotlib_plot(x, y, 'Original Signal (Continuous)', continuous=True)
             st.pyplot()
 
-        st.subheader('Sum of Signals (Discrete)')
-        create_matplotlib_plot(summed_signal[0], summed_signal[1], 'Sum of Signals (Discrete)', continuous=False)
+        st.subheader(f'{result_operation} of Signal (Discrete)')
+        create_matplotlib_plot(signals[0][0], result_signal, f'{result_operation} of Signal (Discrete)', continuous=False)
         st.pyplot()
 
 if __name__ == '__main__':
