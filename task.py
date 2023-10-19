@@ -15,7 +15,7 @@ def subtract_signals(signals):
         return []
 
     # Subtract the second signal from the first signal
-    result = signals[0] - np.sum(signals[1:], axis=0)
+    result = abs(signals[0] - np.sum(signals[1:], axis=0))
     return result
 
 def multiply_signal(signal, constant):
