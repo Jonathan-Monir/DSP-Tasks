@@ -6,6 +6,19 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 
+# Function to clean text
+def clean_text(file_list):
+    signals = list()
+    for line in file_list:
+        signals.append(line.strip())
+            
+    x = [item.split(' ')[0] for item in signals[3:]]
+    y = [item.split(' ')[1] for item in signals[3:]]
+    z = 0
+    if signals[0] == '1':
+        z = [item.split(' ')[2] for item in signals[3:]]
+    return x, y, z
+
 # Function for making Discrete plot
 def Discrete_plot(x, y, plot_name):
     fig = px.scatter(x=x, y=y, title=plot_name)
