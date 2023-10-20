@@ -1,7 +1,11 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-
+import math
+import plotly.graph_objects as go
+import plotly.express as px
+import pandas as pd
+import functions
 def sum_signals(signals):
     if len(signals) == 0:
         return []
@@ -71,6 +75,24 @@ def main():
         st.subheader('Sum of Signals (Discrete)')
         create_matplotlib_plot(summed_signal[0], summed_signal[1], 'Sum of Signals (Discrete)', continuous=False)
         st.pyplot()
-
+    st.divider()
+    col1,col2,col3 = st.columns([1,1,1])
+    square = col1.checkbox('Squaring')
+    shift = col2.checkbox('Shifting')
+    normalize = col3.checkbox('Normalizing')
+    
+    if square:
+        applied_signals = st.multiselect('Select signals to square', options=range(len(signals)))
+        power = st.number_input("The power",0,500)
+        
+        for signal_num in applied_signals:
+            st.write([math.pow(instance[0],power) for instance in signals[signal_num]])
+    if shift:
+        st.multiselect('Select signals to shift', options=range(len(signals)))
+        st.number_input("The angle to shift",0,500,step=math.pi)
+        
+    if normalize:
+        st.multiselect('Select signals to normalize', options=range(len(signals)))
+        
 if __name__ == '__main__':
     main()
