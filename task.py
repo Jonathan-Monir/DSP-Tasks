@@ -42,15 +42,17 @@ def parse_signal_data(data):
     return x_values, y_values
 
 def create_matplotlib_plot(x, y, plot_name, continuous=True):
-    plt.figure(figsize=(8, 4))
+    fig, ax = plt.subplots()
     if continuous:
-        plt.plot(x, y)
+        ax.plot(x, y)
     else:
-        plt.stem(x, y, linefmt='-b', markerfmt='ob', basefmt=' ')
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.title(plot_name)
-    return plt
+        ax.stem(x, y, linefmt='-b', markerfmt='ob', basefmt=' ')
+    
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_title(plot_name)
+    
+    return fig
 
 def main():
     st.title('Signal Operations')
@@ -93,18 +95,22 @@ def main():
         st.code(format_samples(result_signal), language='text')
 
         st.subheader('Original Signal (Discrete)')
-        for x, y in signals[0]:
-            create_matplotlib_plot(x, y, 'Original Signal (Discrete)', continuous=False)
-            st.pyplot()
+        for signal in signals:
+            fig = create_matplotlib_plot(signal[0], signal[1], 'Original Signal (Discrete)', continuous=False)
+            st.pyplot(fig)
 
         st.subheader('Original Signal (Continuous)')
-        for x, y in signals[0]:
-            create_matplotlib_plot(x, y, 'Original Signal (Continuous)', continuous=True)
-            st.pyplot()
+        for signal in signals:
+            fig = create_matplotlib_plot(signal[0], signal[1], 'Original Signal (Continuous)', continuous=True)
+            st.pyplot(fig)
 
         st.subheader(f'{result_operation} of Signal (Discrete)')
-        create_matplotlib_plot(signals[0][0], result_signal, f'{result_operation} of Signal (Discrete)', continuous=False)
-        st.pyplot()
+        fig = create_matplotlib_plot(signals[0][0], result_signal, f'{result_operation} of Signal (Discrete)', continuous=False)
+        st.pyplot(fig)
+
+        st.subheader(f'{result_operation} of Signal (Continuous)')
+        fig = create_matplotlib_plot(signals[0][0], result_signal, f'{result_operation} of Signal (Continuous)', continuous=True)
+        st.pyplot(fig)
 
 if __name__ == '__main__':
     main()
