@@ -23,6 +23,11 @@ def multiply_signal(signal, constant):
     result = [value * constant for value in signal]
     return result
 
+def accumulate_signal(signal):
+    # Calculate the accumulation of the signal
+    result = np.cumsum(signal)
+    return result
+
 
 def format_samples(signal):
     return "\n".join([f"{x} {y}" for x, y in enumerate(signal)])
@@ -57,11 +62,13 @@ def create_matplotlib_plot(x, y, plot_name, continuous=True):
 def main():
     st.title('Signal Operations')
 
-    operation = st.selectbox('Operation', ['Addition', 'Subtraction', 'Multiplication'])
+    operation = st.selectbox('Operation', ['Addition', 'Subtraction', 'Multiplication', 'Accumulation'])
 
     if operation in ['Addition', 'Subtraction']:
         num_signals = st.number_input('Number of Signals', min_value=2, value=2, step=1)
-    else:  # For multiplication
+    elif operation == 'Multiplication':
+        num_signals = 1
+    else:  # Accumulation
         num_signals = 1
 
     constant = 0
@@ -87,9 +94,12 @@ def main():
             elif operation == 'Subtraction':
                 result_signal = subtract_signals([signal[1] for signal in signals])
                 result_operation = 'Subtraction'
-        else:  # Multiplication
+        elif operation == 'Multiplication':
             result_signal = multiply_signal(signals[0][1], constant)
             result_operation = 'Multiplication'
+        else:  # Accumulation
+            result_signal = accumulate_signal(signals[0][1])
+            result_operation = 'Accumulation'
 
         st.success(f'Signal {result_operation} (Samples):')
         st.code(format_samples(result_signal), language='text')
