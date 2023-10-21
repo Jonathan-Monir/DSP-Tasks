@@ -133,17 +133,52 @@ def main():
     normalize = col3.checkbox('Normalizing')
     
     if square:
+        st.header('Powering', anchor=None, help=None, divider=True)
         applied_signals = st.multiselect('Select signals to square', options=range(len(signals)))
         power = st.number_input("The power",0,500)
         
         for signal_num in applied_signals:
-            st.write([math.pow(instance[0],power) for instance in signals[signal_num]])
-    if shift:
-        st.multiselect('Select signals to shift', options=range(len(signals)))
-        st.number_input("The angle to shift",0,500,step=math.pi)
+           
+            powered_list = [x ** power for x in  signals[signal_num][1]]
+            x = signals[signal_num][0]
+            y = powered_list
+            
+            fig = functions.Discrete_plot(x,y,f"Discrete plot for signal {signal_num}")
+            st.plotly_chart(fig)
+            fig = functions.Continuous_plot(x,y,f"Discrete plot for signal {signal_num}")
+            st.plotly_chart(fig)
         
+    if shift:
+        st.header('Shifting', anchor=None, help=None, divider=True)
+        applied_signals = st.multiselect('Select signals to shift', options=range(len(signals)))
+        shift_value = st.number_input("The value to shift",-5000.0,5000.0,step=5.0,value = 0.0)
+        for signal_num in applied_signals:
+            shifted_list = [x + shift_value for x in  signals[signal_num][1]]
+            
+            x = shifted_list
+            y = signals[signal_num][1]
+            fig = functions.Discrete_plot(x,y,f"Discrete plot for signal {signal_num}")
+            st.plotly_chart(fig)
+            fig = functions.Continuous_plot(x,y,f"Discrete plot for signal {signal_num}")
+            st.plotly_chart(fig)
+            
     if normalize:
-        st.multiselect('Select signals to normalize', options=range(len(signals)))
+        st.header('Normalizing', anchor=None, help=None, divider=True,)
+        applied_signals = st.multiselect('Select signals to normalize', options=range(len(signals)))
+        minimum_value = st.number_input("The minimum value",-5000.0,5000.0,step=5.0,value = -1.0)
+        maximum_value = st.number_input("The maximum value",-5000.0,5000.0,step=5.0,value = 1.0)
+
+        if maximum_value <= minimum_value:
+            raise Exception(f"Warning: The chosen maximum value ({maximum_value}) is below the minimum value ({minimum_value} Hz).")
+        
+        for signal_num in applied_signals:
+            x = signals[signal_num][0]
+            y = functions.normalize_list(signals[signal_num][1],minimum_value,maximum_value)
+            
+            fig = functions.Discrete_plot(x,y,f"Discrete plot for signal {signal_num}")
+            st.plotly_chart(fig)
+            fig = functions.Continuous_plot(x,y,f"Discrete plot for signal {signal_num}")
+            st.plotly_chart(fig)
         
 if __name__ == '__main__':
     main()
