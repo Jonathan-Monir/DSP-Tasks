@@ -41,3 +41,16 @@ def Continuous_plot(x, y, plot_name):
     fig.update_traces(mode='lines')
     
     return fig
+
+def normalize_list(input_list, min_value, max_value):
+    if not input_list:
+        return input_list  # Handle empty list
+
+    # Find the minimum and maximum values in the list
+    data_min = min(input_list)
+    data_max = max(input_list)
+
+    # Normalize the list between the specified min and max values
+    normalized_list = [(x - data_min) / (data_max - data_min) * (max_value - min_value) + min_value for x in input_list]
+
+    return normalized_list
