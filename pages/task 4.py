@@ -1,5 +1,7 @@
 import streamlit as st
 import numpy as np
+import plotly.graph_objects as go
+import plotly.express as px
 from scipy.fft import fft
 from scipy.fft import ifft
 import math
@@ -64,7 +66,22 @@ def SignalComparePhaseShift(SignalInput, SignalOutput):
             if abs(A - B) > 0.0001:
                 return False
     return True
+
+
+# Function for making Discrete plot
+def Discrete_plot(x, y, plot_name):
+    fig = px.scatter(x=x, y=y, title=plot_name)
+
+    for i in range(len(x)):
+        fig.add_trace(go.Scatter(x=[x[i], x[i]], y=[0, y[i], None], mode='lines', name=f'Line {i}', line=dict(color='gray', dash='dash')))
+
+    fig.update_layout(
+        xaxis_title='n',
+        yaxis_title='X(n)',
+        showlegend=True
+    )
     
+    return fig
 def main():
     
     st.title("Fourier Transform App")
@@ -100,6 +117,9 @@ def main():
             output_y.extend(y_list)
     option  = st.selectbox("Select the option",["dft","idft"])
     fs = st.number_input("sampling frequency",0,10000,1)
+    add_amp = st.number_input("Adding amplitude",0,10000,0)
+    multiply_amp = st.number_input("Multiply amplitude",0,10000,1)
+    shift_phase = st.number_input("Shifting phase",-10000,10000,0)
     if st.button('Perform Fourier Transform'):
         if option == "dft":
             magnitude, phase = dft(y_values)
@@ -119,8 +139,8 @@ def main():
             st.subheader("y Values:")
             st.write(output_y_array)
             
-            magnitude = magnitude / fs
-            phase = phase / fs
+            magnitude = ((magnitude * multiply_amp) + add_amp) / fs
+            phase = (phase - shift_phase) / fs
             
             st.subheader("Amplitude Values after sample space:")
             st.write(magnitude)
@@ -137,19 +157,27 @@ def main():
                 st.success("phase values are correct.")
             else:
                 st.error("phase values are wrong.")
-        
+            
+            amps = [pow((magnitude[i]**2)+(phase[i]**2),1/2) for i in range(len(magnitude))]
+            
+            fundamental_frequency = [(2 * math.pi) / len(magnitude) * (1 / (fs * 0.001)) * amp for amp in range(len(magnitude))]
+            
+            phases = [math.degrees(math.atan(phase[i]/magnitude[i])) for i in range(len(magnitude))]
+            
+            st.plotly_chart(Discrete_plot(fundamental_frequency, amps, "Frequency versus Amplitude"))
+            st.plotly_chart(Discrete_plot(fundamental_frequency, phases, "Frequency versus phase"))
+            st.plotly_chart(Discrete_plot(amps, phases, "Magnitude versus phase"))
+            
         if option == "idft":
             magnitude, phase = x_values, y_values
             
-            magnitude = magnitude * fs
-            phase = phase * fs
             
             st.write(magnitude,phase)
             output_y_array = np.array(output_y, dtype=float)
             
-            # input fs
-            st.write(phase)
             magnitude = np.real(idft(magnitude, phase))
+            
+            magnitude = [round(((x * multiply_amp) + add_amp) * fs) for x in magnitude]
             
             st.subheader("Amplitude Values:")
             st.write(magnitude)
@@ -158,7 +186,16 @@ def main():
                 st.success("Amplitude values are correct.")
             else:
                 st.error("Amplitude values are wrong.")
-                
+        
+        with open('data.txt', 'w') as file:
+            for i, j in zip(magnitude, phase):
+                file.write(f"{i} {j}\n")
+
+        # Streamlit app
+        st.title("Download Data as Text File")
+
+        # Create a download link for the text file
+        st.markdown("[Download Data](data.txt)")
         # Display frequency versus amplitude
         # st.subheader("Frequency versus Amplitude")
         # plt.stem(magnitude, use_line_collection=True)
