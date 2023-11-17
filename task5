@@ -1,0 +1,129 @@
+import streamlit as st
+import numpy as np
+import plotly.graph_objects as go
+import plotly.express as px
+from scipy.fft import fft
+from scipy.fft import ifft
+import math
+import matplotlib.pyplot as plt
+
+def format_samples(signal):
+    return "\n".join([f"{x} {y}" for x, y in enumerate(signal)])
+
+def parse_signal_data(data):
+    x_values, y_values = [], []
+    for line in data:
+        if ',' in line:
+            parts = line.strip().split(',')
+        else:
+            parts = line.strip().split()
+        if len(parts) == 2:
+            x, y = parts
+            x = x.replace('f', '')
+            y = y.replace('f', '')
+            try:
+                x_values.append(float(x))
+                y_values.append(float(y))
+            except ValueError:
+                # Handle invalid data here (e.g., skip or log it)
+                pass
+    return x_values, y_values
+
+def RemoveDc(input_signals):
+    # Extract y_values from each tuple
+    y_values_list = [signal[1] for signal in input_signals]
+
+    # Calculate the sum of y_values across all signals
+    total_sum = sum([sum(y_values) for y_values in y_values_list])
+
+    # Calculate the average
+    average = total_sum / sum(len(y_values) for y_values in y_values_list)
+
+    # Subtract the average from each y_values list
+    result = [[x, [y - average for y in y_values]] for x, y_values in input_signals]
+
+    return result
+def SignalSamplesAreEqual(file_name,samples):
+    expected_indices=[]
+    expected_samples=[]
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L=line.strip()
+            if len(L.split(' '))==2:
+                L=line.split(' ')
+                V1=int(L[0])
+                V2=float(L[1])
+                expected_indices.append(V1)
+                expected_samples.append(V2)
+                line = f.readline()
+            else:
+                break
+                
+    if len(expected_samples)!=len(samples):
+        print(len(expected_samples))
+        print(len(samples))
+        print("Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(expected_samples)):
+        if abs(samples[i] - expected_samples[i]) < 0.01:
+            continue
+        else:
+            print("Test case failed, your signal have different values from the expected one") 
+            return
+    print("Test case passed successfully")
+# Function for making Discrete plot
+def Discrete_plot(x, y, plot_name):
+    fig = px.scatter(x=x, y=y, title=plot_name)
+
+    for i in range(len(x)):
+        fig.add_trace(go.Scatter(x=[x[i], x[i]], y=[0, y[i], None], mode='lines', name=f'Line {i}', line=dict(color='gray', dash='dash')))
+
+    fig.update_layout(
+        xaxis_title='n',
+        yaxis_title='X(n)',
+        showlegend=True
+    )
+    
+    return fig
+def main():
+    # Input signals
+    st.subheader("Input Signals")
+
+    num_signals = st.number_input("How many signals do you want to analyze?", min_value=1, value=1, key="num_signals")
+
+    input_signals = []
+
+    for i in range(num_signals):
+        signal_file = st.file_uploader(f'Upload Signal {i + 1}', type=['txt'], key=f'signal_uploader_{i}')
+
+        if signal_file is not None:
+            uploaded_data = signal_file.read().decode('utf-8')
+            lines = uploaded_data.split('\n')
+            x_values, y_values = parse_signal_data(lines)
+            input_signals.append((x_values, y_values))
+
+    remove_dc_button = st.button('Remove DC Component')
+
+    if remove_dc_button:
+        result = RemoveDc(input_signals)
+        st.subheader("Result after Removing DC Component")
+        st.text("X Values:")
+        st.text(result[0][0])
+        st.text("Y Values:")
+        st.text(result[0][1])
+        st.plotly_chart(Discrete_plot(result[0][0], result[0][1], "Signal After DC Removal"))
+
+        # Extract the y values from result
+        y_values = result[0][1]
+        
+        # Move SignalSamplesAreEqual outside the button block
+        file_name = r"C:\Users\Tasneem\Downloads\DC_component_output.txt"
+        SignalSamplesAreEqual(file_name, y_values)
+
+if __name__ == "__main__":
+    main()
