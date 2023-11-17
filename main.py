@@ -53,6 +53,6 @@ def SignalComparePhaseShift(SignalInput, SignalOutput):
     
 
 def main():
-    st.image("logo.png")
+    st.image("main.png")
 if __name__ == "__main__":
     main()
