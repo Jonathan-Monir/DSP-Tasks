@@ -1,0 +1,215 @@
+import streamlit as st
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import convolve
+from scipy.fft import fft
+
+def format_samples(signal):
+    return "\n".join([f"{x} {y}" for x, y in enumerate(signal)])
+
+def parse_signal_data(data):
+    x_values, y_values = [], []
+    for line in data:
+        parts = line.strip().split()
+        if len(parts) == 2:
+            x, y = parts
+            try:
+                x_values.append(float(x))
+                y_values.append(float(y))
+            except ValueError:
+                # Handle invalid data here (e.g., skip or log it)
+                pass
+    return x_values, y_values
+
+def fold_signal(signal):
+    folded_signal = []
+    for i in range(len(signal)):
+        folded_signal.append((signal[i][0], len(signal) - i))
+    return folded_signal[:len(signal)//2]
+
+
+def delay_normal(signal, delay_amount):
+    x_values, y_values = zip(*signal)
+    
+    # Convert x values to numpy array for easy manipulation
+    x_values = np.array(x_values)
+    
+    # Delay only the x values
+    delayed_x_values = x_values + float(delay_amount)
+    
+    # Combine the delayed x values with the original y values into a single signal
+    delayed_signal = list(map(lambda x, y: f"{x} {y}", delayed_x_values, y_values))
+    
+    return delayed_signal
+
+def delay_signal(signal, delay_amount):
+    # Extract x and y values from the signal
+    signal = fold_signal(signal)
+    x_values, y_values = zip(*signal)
+    
+    # Convert x values to numpy array for easy manipulation
+    x_values = np.array(x_values)
+    
+    # Delay only the x values
+    delayed_x_values = x_values + float(delay_amount)
+    
+    # Combine the delayed x values with the original y values into a single signal
+    delayed_signal = list(map(lambda x, y: f"{x} {y}", delayed_x_values, y_values))
+    
+    return delayed_signal
+
+
+def remove_dc_component(input_signal):
+    fft_result = np.fft.fft(input_signal)
+    fft_result[0] = 0
+    filtered_signal = np.fft.ifft(fft_result)
+
+    return filtered_signal.real  
+
+def convolve_signals(signal1, signal2):
+    if len(signal1) == 0 or len(signal2) == 0:
+        raise ValueError("Input signals cannot be empty for convolution.")
+    convolved_signal = convolve(signal1, signal2, mode='full')
+    return convolved_signal
+
+def plot_signal(x_values, original_signal, processed_x, processed_signal):
+    st.subheader("Signal:")
+    st.write("Original Signal:", format_samples(list(zip(x_values, original_signal))))
+    st.write("Processed Signal:", format_samples(list(zip(processed_x, processed_signal))))
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(x_values, original_signal, label='Original Signal')
+    plt.plot(processed_x, processed_signal, label='Processed Signal')
+    plt.title('Processed Signal')
+    plt.legend()
+    st.pyplot()
+
+def ConvTest(Your_indices,Your_samples): 
+    """
+    Test inputs
+    InputIndicesSignal1 =[-2, -1, 0, 1]
+    InputSamplesSignal1 = [1, 2, 1, 1 ]
+    
+    InputIndicesSignal2=[0, 1, 2, 3, 4, 5 ]
+    InputSamplesSignal2 = [ 1, -1, 0, 0, 1, 1 ]
+    """
+    
+    expected_indices=[-2, -1, 0, 1, 2, 3, 4, 5, 6]
+    expected_samples = [1, 1, -1, 0, 0, 3, 3, 2, 1 ]
+
+    
+    if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
+        print("Conv Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(Your_indices)):
+        if(Your_indices[i]!=expected_indices[i]):
+            print("Conv Test case failed, your signal have different indicies from the expected one") 
+            return
+    for i in range(len(expected_samples)):
+        if abs(Your_samples[i] - expected_samples[i]) < 0.01:
+            continue
+        else:
+            print("Conv Test case failed, your signal have different values from the expected one") 
+            return
+    print("Conv Test case passed successfully")
+
+def Shift_Fold_Signal(file_name,Your_indices,Your_samples):      
+    expected_indices=[]
+    expected_samples=[]
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L=line.strip()
+            if len(L.split(' '))==2:
+                L=line.split(' ')
+                V1=int(L[0])
+                V2=float(L[1])
+                expected_indices.append(V1)
+                expected_samples.append(V2)
+                line = f.readline()
+            else:
+                break
+    print("Current Output Test file is: ")
+    print(file_name)
+    print("\n")
+    if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
+        print("Shift_Fold_Signal Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(Your_indices)):
+        if(Your_indices[i]!=expected_indices[i]):
+            print("Shift_Fold_Signal Test case failed, your signal have different indicies from the expected one") 
+            return
+    for i in range(len(expected_samples)):
+        if abs(Your_samples[i] - expected_samples[i]) < 0.01:
+            continue
+        else:
+            print("Shift_Fold_Signal Test case failed, your signal have different values from the expected one") 
+            return
+    print("Shift_Fold_Signal Test case passed successfully")
+
+def main():
+    operation = st.radio("Choose Operation", ["Fold", "Delay","Delay folded", "Convolve", "Remove DC"])
+
+    num_signals = st.number_input("How many signals do you want to analyze?", min_value=1, value=1, key="num_signals")
+
+    input_signals = []
+
+    for i in range(num_signals):
+        signal_file = st.file_uploader(f'Upload Signal {i + 1}', type=['txt'], key=f'signal_uploader_{i}')
+        output_signal_file = st.file_uploader(f'Upload Output Signal {i + 1}', type=['txt'], key=f'output_signal_uploader_{i}')
+
+        if signal_file is not None:
+            uploaded_data = signal_file.read().decode('utf-8')
+            lines = uploaded_data.split('\n')
+            x_values, y_values = parse_signal_data(lines)
+            input_signals.append((x_values, y_values))
+
+    if operation == "Delay folded" or operation == "Delay":
+        delay_amount = st.number_input(f"Enter delay amount for all signals", value=0)
+
+    if st.button("Apply Operation"):
+        for i, (x_values, y_values) in enumerate(input_signals):
+            if operation == "Fold":
+                folded_signal = fold_signal(list(zip(x_values, y_values)))
+                st.subheader("Folded Signal:")
+                # Print the folded signal in the specified format
+                for x, y in folded_signal:
+                    st.write(f"{x} {y}")
+
+            elif operation == "Delay folded":
+                delayed_signal = delay_signal(list(zip(x_values, y_values)), delay_amount)
+                st.subheader("Delayed folded Signal:")
+                # Print the delayed signal in the specified format
+                for signal in delayed_signal:
+                    st.write(signal)
+
+            elif operation == "Delay":
+                delayed_signal = delay_signal(list(zip(x_values, y_values)), delay_amount)
+                st.subheader("Delayed Signal:")
+                # Print the delayed signal in the specified format
+                for signal in delayed_signal:
+                    st.write(signal)
+
+            elif operation == "Convolve":
+                if i == 0:
+                    st.warning("Upload a second signal for convolution.")
+                    continue
+                signal1 = input_signals[0][1]
+                signal2 = y_values
+                convolved_signal = convolve_signals(signal1, signal2)
+                convolved_x = np.arange(len(convolved_signal))
+                # Print convolved signal in the specified format
+                for x, y in zip(convolved_x, convolved_signal):
+                    st.write(f"{x} {y}")
+            elif operation == "Remove DC":
+                dc_removed_signal = remove_dc_component(y_values)
+                # Print DC removed signal in the specified format
+                for x, y in zip(x_values, dc_removed_signal):
+                    st.write(f"{x} {y}")
+
+if __name__ == "__main__":
+    main()
