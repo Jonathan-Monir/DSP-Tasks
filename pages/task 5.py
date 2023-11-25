@@ -134,7 +134,7 @@ if operation == "remove dc":
             y_values = result[0][1]
             
             # Move SignalSamplesAreEqual outside the button block
-            file_name = r"D:\vscoded\Gam3a\Talta\dSP\Files\Lab 5\Task files\Remove DC component\DC_component_output.txt"
+            file_name = r"files\task 5\Remove DC component\DC_component_output.txt"
             SignalSamplesAreEqual(file_name, y_values)
 
     if __name__ == "__main__":
@@ -186,7 +186,7 @@ else:
         for k in range(N):
             sum_result = 0
             for n in range(N):
-                sum_result += input_list[n] * math.cos(math.pi / (4 * N) * (2 * n - 1) * (2 * (k - 1) + 1))
+                sum_result += input_list[n] * math.cos(math.pi / (4 * N) * (2 * n - 1) * (2 * k - 1))
                 
             result.append(math.sqrt(2 / N) * sum_result)
             
