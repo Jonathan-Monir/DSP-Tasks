@@ -3,6 +3,20 @@ import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
 
+# Function for making Discrete plot
+def Discrete_plot(x, y, plot_name):
+    fig = px.scatter(x=x, y=y, title=plot_name)
+
+    for i in range(len(x)):
+        fig.add_trace(go.Scatter(x=[x[i], x[i]], y=[0, y[i], None], mode='lines', name=f'Line {i}', line=dict(color='gray', dash='dash')))
+
+    fig.update_layout(
+        xaxis_title='n',
+        yaxis_title='X(n)',
+        showlegend=True
+    )
+    
+    return fig
 if "input_signals" in st.session_state:
     input_signals = st.session_state["input_signals"]
     
@@ -17,22 +31,7 @@ else:
 
 operation = st.selectbox("choose the function",["dct","remove dc"])
 
-def Discrete_plot(x, y, plot_name):
-        fig = px.scatter(x=x, y=y, title=plot_name)
-
-        for i in range(len(x)):
-            fig.add_trace(go.Scatter(x=[x[i], x[i]], y=[0, y[i], None], mode='lines', name=f'Line {i}', line=dict(color='gray', dash='dash')))
-
-        fig.update_layout(
-            xaxis_title='n',
-            yaxis_title='X(n)',
-            showlegend=True
-        )
-        
-        return fig
-    
 if operation == "remove dc":
-    
     def format_samples(signal):
         return "\n".join([f"{x} {y}" for x, y in enumerate(signal)])
 
@@ -89,12 +88,11 @@ if operation == "remove dc":
                     line = f.readline()
                 else:
                     break
-        samples
-        expected_samples
+                    
         if len(expected_samples)!=len(samples):
             st.write(len(expected_samples))
             st.write(len(samples))
-            st.error("Test case failed, your signal have different length from the expected one")
+            st.write("Test case failed, your signal have different length from the expected one")
             return
         for i in range(len(expected_samples)):
             if abs(samples[i] - expected_samples[i]) < 0.01:
@@ -103,20 +101,7 @@ if operation == "remove dc":
                 st.error("Test case failed, your signal have different values from the expected one") 
                 return
         st.success("Test case passed successfully")
-    # Function for making Discrete plot
-    def Discrete_plot(x, y, plot_name):
-        fig = px.scatter(x=x, y=y, title=plot_name)
-
-        for i in range(len(x)):
-            fig.add_trace(go.Scatter(x=[x[i], x[i]], y=[0, y[i], None], mode='lines', name=f'Line {i}', line=dict(color='gray', dash='dash')))
-
-        fig.update_layout(
-            xaxis_title='n',
-            yaxis_title='X(n)',
-            showlegend=True
-        )
-        
-        return fig
+    
     def main():
         # Input signals
         st.subheader("Input Signals")
@@ -149,7 +134,7 @@ if operation == "remove dc":
             y_values = result[0][1]
             
             # Move SignalSamplesAreEqual outside the button block
-            file_name = r"files\task 5\Remove DC component\DC_component_output.txt"
+            file_name = r"D:\vscoded\Gam3a\Talta\dSP\Files\Lab 5\Task files\Remove DC component\DC_component_output.txt"
             SignalSamplesAreEqual(file_name, y_values)
 
     if __name__ == "__main__":
