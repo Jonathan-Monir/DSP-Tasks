@@ -25,7 +25,7 @@ def fold_signal(signal):
     folded_signal = []
     for i in range(len(signal)):
         folded_signal.append((signal[i][0], len(signal) - i))
-    return folded_signal[:len(signal)//2]
+    return folded_signal
 
 
 def delay_normal(signal, delay_amount):
@@ -57,6 +57,53 @@ def delay_signal(signal, delay_amount):
     delayed_signal = list(map(lambda x, y: f"{x} {y}", delayed_x_values, y_values))
     
     return delayed_signal
+
+def DerivativeSignal():
+    InputSignal=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100]
+    expectedOutput_first = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    expectedOutput_second = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    """
+    Write your Code here:
+    Start
+    """
+  
+    FirstDrev=[InputSignal[i+1] - InputSignal[i] for i in range(len(InputSignal)-1)]
+    SecondDrev=[InputSignal[i+2]-2*InputSignal[i+1]+InputSignal[i] for i in range(len(InputSignal)-2)]
+    
+    st.write(f"FirstDrev: ",FirstDrev," secondDrev: ",SecondDrev)
+    
+    
+    """
+    End
+    """
+    
+    """
+    Testing your Code
+    """
+    if( (len(FirstDrev)!=len(expectedOutput_first)) or (len(SecondDrev)!=len(expectedOutput_second))):
+        st.write("mismatch in length") 
+        return
+    first=second=True
+    for i in range(len(expectedOutput_first)):
+        if abs(FirstDrev[i] - expectedOutput_first[i]) < 0.01:
+            continue
+        else:
+            first=False
+            st.write("1st derivative wrong")
+            return
+    for i in range(len(expectedOutput_second)):
+        if abs(SecondDrev[i] - expectedOutput_second[i]) < 0.01:
+            continue
+        else:
+            second=False
+            st.write("2nd derivative wrong") 
+            return
+    if(first and second):
+        st.success("Derivative Test case passed successfully")
+    else:
+        st.write("Derivative Test case failed")
+    return
 
 
 def remove_dc_component(input_signal):
@@ -99,19 +146,19 @@ def ConvTest(Your_indices,Your_samples):
 
     
     if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
-        print("Conv Test case failed, your signal have different length from the expected one")
+        st.write("Conv Test case failed, your signal have different length from the expected one")
         return
     for i in range(len(Your_indices)):
         if(Your_indices[i]!=expected_indices[i]):
-            print("Conv Test case failed, your signal have different indicies from the expected one") 
+            st.write("Conv Test case failed, your signal have different indicies from the expected one") 
             return
     for i in range(len(expected_samples)):
         if abs(Your_samples[i] - expected_samples[i]) < 0.01:
             continue
         else:
-            print("Conv Test case failed, your signal have different values from the expected one") 
+            st.write("Conv Test case failed, your signal have different values from the expected one") 
             return
-    print("Conv Test case passed successfully")
+    st.success("Conv Test case passed successfully")
 
 def Shift_Fold_Signal(file_name,Your_indices,Your_samples):      
     expected_indices=[]
@@ -133,26 +180,27 @@ def Shift_Fold_Signal(file_name,Your_indices,Your_samples):
                 line = f.readline()
             else:
                 break
-    print("Current Output Test file is: ")
-    print(file_name)
-    print("\n")
+    st.write("Current Output Test file is: ")
+    st.write(file_name)
+    st.write("\n")
     if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
-        print("Shift_Fold_Signal Test case failed, your signal have different length from the expected one")
+        st.write("Shift_Fold_Signal Test case failed, your signal have different length from the expected one")
         return
     for i in range(len(Your_indices)):
         if(Your_indices[i]!=expected_indices[i]):
-            print("Shift_Fold_Signal Test case failed, your signal have different indicies from the expected one") 
+            st.write(Your_indices[i],expected_indices[i])
+            st.write("Shift_Fold_Signal Test case failed, your signal have different indicies from the expected one") 
             return
     for i in range(len(expected_samples)):
         if abs(Your_samples[i] - expected_samples[i]) < 0.01:
             continue
         else:
-            print("Shift_Fold_Signal Test case failed, your signal have different values from the expected one") 
+            st.write("Shift_Fold_Signal Test case failed, your signal have different values from the expected one") 
             return
-    print("Shift_Fold_Signal Test case passed successfully")
+    st.success("Shift_Fold_Signal Test case passed successfully")
 
 def main():
-    operation = st.radio("Choose Operation", ["Fold", "Delay","Delay folded", "Convolve", "Remove DC"])
+    operation = st.radio("Choose Operation", ["Fold", "Delay","Delay folded", "Convolve", "Remove DC", "Moving average", "Derivative"])
 
     num_signals = st.number_input("How many signals do you want to analyze?", min_value=1, value=1, key="num_signals")
 
@@ -170,23 +218,41 @@ def main():
 
     if operation == "Delay folded" or operation == "Delay":
         delay_amount = st.number_input(f"Enter delay amount for all signals", value=0)
-
+        
+    if operation == "Moving average":
+        window_size = st.number_input('window size',1,6,3)
+        
     if st.button("Apply Operation"):
         for i, (x_values, y_values) in enumerate(input_signals):
             if operation == "Fold":
+                indices = []
+                samples = []
                 folded_signal = fold_signal(list(zip(x_values, y_values)))
                 st.subheader("Folded Signal:")
                 # Print the folded signal in the specified format
                 for x, y in folded_signal:
                     st.write(f"{x} {y}")
-
+                    indices.append(x)
+                    samples.append(y)
+                Shift_Fold_Signal(r"files\task 6\TestCases\Shifting and Folding\Output_fold.txt",indices,samples)
             elif operation == "Delay folded":
+                indices = []
+                samples = []
                 delayed_signal = delay_signal(list(zip(x_values, y_values)), delay_amount)
+                
                 st.subheader("Delayed folded Signal:")
                 # Print the delayed signal in the specified format
                 for signal in delayed_signal:
                     st.write(signal)
-
+                    parts = signal.split(" ")
+                    indices.append(float(parts[0]))
+                    samples.append(int(parts[1]))
+                if delay_amount == 0:
+                    Shift_Fold_Signal(r"files\task 6\TestCases\Shifting and Folding\Output_fold.txt",indices,samples)
+                elif delay_amount == -500:
+                    Shift_Fold_Signal(r"files\task 6\TestCases\Shifting and Folding\Output_ShiftFoldedby-500.txt",indices,samples)
+                elif delay_amount == 500:
+                    Shift_Fold_Signal(r"files\task 6\TestCases\Shifting and Folding\Output_ShifFoldedby500.txt",indices,samples)
             elif operation == "Delay":
                 delayed_signal = delay_signal(list(zip(x_values, y_values)), delay_amount)
                 st.subheader("Delayed Signal:")
@@ -195,21 +261,36 @@ def main():
                     st.write(signal)
 
             elif operation == "Convolve":
+                indices = []
+                samples = []
                 if i == 0:
                     st.warning("Upload a second signal for convolution.")
                     continue
+                indices1 = input_signals[0][0]
                 signal1 = input_signals[0][1]
                 signal2 = y_values
                 convolved_signal = convolve_signals(signal1, signal2)
                 convolved_x = np.arange(len(convolved_signal))
                 # Print convolved signal in the specified format
                 for x, y in zip(convolved_x, convolved_signal):
-                    st.write(f"{x} {y}")
+                    st.write(f"{x+indices1[0]} {y}")
+                    indices.append(x+indices1[0])
+                    samples.append(y)
+                ConvTest(indices,samples)
+                
             elif operation == "Remove DC":
                 dc_removed_signal = remove_dc_component(y_values)
                 # Print DC removed signal in the specified format
                 for x, y in zip(x_values, dc_removed_signal):
                     st.write(f"{x} {y}")
-
+########################################################################################################
+    
+        if operation == "Moving average":
+            signal1 = input_signals[0][1]
+            output = [sum(signal1[i:i+window_size])/window_size for i in range(len(signal1) - (window_size-1))]
+            for i in output:
+                st.write(str(i))
+        if operation == "Derivative":
+            DerivativeSignal()
 if __name__ == "__main__":
     main()
