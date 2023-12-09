@@ -13,8 +13,10 @@ if "output_signals" in st.session_state:
 else:
     st.warning("Please add output signals")
 
-signal1 = input_signals[0][1]
-signal2 = input_signals[1][1]
+if "input_signals" in st.session_state:
+    signal1 = input_signals[0][1]
+    signal2 = input_signals[1][1]
+
 
 operation = st.selectbox("select operation",["normalize cross correlation","time delay","files"])
 def calculate_average(values):
@@ -79,15 +81,19 @@ def normalized_cross_correlation(signal1, signal2):
     
     powered_result = sum(powered_signal1) * sum(powered_signal2)
     
+    print(powered_result)
     result = summed_result / ((1/N) * np.sqrt(powered_result))
+    
+    print(result)
 
     return result
 normalized_signal = []
-for _ in range(len(signal2)):
-    result = normalized_cross_correlation(signal1, signal2)
-    normalized_signal.append(result)
-    first_element = signal2.pop(0)
-    signal2.append(first_element)
+if operation == "normalize cross correlation" or operation == "time delay":
+    for _ in range(len(signal2)):
+        result = normalized_cross_correlation(signal1, signal2)
+        normalized_signal.append(result)
+        first_element = signal2.pop(0)
+        signal2.append(first_element)
     
 if st.button("Submit"):
     if operation == "normalize cross correlation":
@@ -116,8 +122,8 @@ if operation == "files":
         known_signals.append({"file": uploaded_file, "classification": classification})
 
     # Calculate average for known signals
-    up_values = []
-    down_values = []
+    up_values = [0] * 1255
+    down_values = [0] * 1255
 
     for i, signal in enumerate(known_signals):
         st.write(f"### Known Signal {i+1} ({signal['classification']}):")
@@ -125,55 +131,73 @@ if operation == "files":
         if signal['file'] is not None:
             content = signal['file'].read().decode("utf-8")
             values = [float(value.strip()) for value in content.splitlines() if value.strip().replace('.', '', 1).isdigit()]
+            # print(values)
+            # print(type(int(content[0])))
+            for j in range(len(values)):
+                if i == 0:
+                    if signal['classification'] == "Up":
+                        # print(values[j])
+                        # print(type(values[j]))
+                        up_values[j]=int(values[j])
+                    elif signal['classification'] == "Down":
+                        down_values[j]=values[j] 
+                else:
+                    if signal['classification'] == "Up":
+                        up_values[j]+=values[j]
+                    elif signal['classification'] == "Down":
+                        down_values[j]+=values[j]
+    
+    for val in range(len(up_values)):
+        
+        up_values[val] = up_values[val]/ (num_known_signals/2)
+    for val in range(len(down_values)):
+        
+        down_values[val] = down_values[val]/ (num_known_signals/2)
 
-            average = calculate_average(values)
-            # st.write("#### File Content:")
-            # st.code(content)
-
-            if average is not None:
-                # Add the average value to the appropriate array
-                if signal['classification'] == "Up":
-                    up_values.append(average)
-                elif signal['classification'] == "Down":
-                    down_values.append(average)
-            else:
-                st.warning(f"No valid numerical values found in Known Signal {i+1}.")
-
-    # Display total averages for up and down values
-    total_average_up = calculate_average(up_values)
-    total_average_down = calculate_average(down_values)
 
     st.write("### Summary for Known Signals:")
     st.write("Up Values:", up_values)
     st.write("Down Values:", down_values)
-    st.write("Total Average for Up Values:", total_average_up)
-    st.write("Total Average for Down Values:", total_average_down)
+
 
     # Get the number of signals to classify
     num_unknown_signals = st.number_input("Enter the number of signals to classify", min_value=1, value=1, step=1)
 
     # Allow the user to upload and classify additional text files
     for i in range(num_unknown_signals):
+        tests = {}
         new_file = st.file_uploader(f"Upload text file {i+1} for classification", type="txt")
         if new_file is not None:
             new_content = new_file.read().decode("utf-8")
             new_values = [float(value.strip()) for value in new_content.splitlines() if value.strip().replace('.', '', 1).isdigit()]
 
-            new_average = calculate_average(new_values)
-            # st.write(f"### New File Content {i+1}:")
-            # st.code(new_content)
-
-            if new_average is not None:
-                # Classify and add the new average value to the appropriate array
-                classification = classify_signal(new_average, total_average_up,total_average_down)
-                st.success(f"Classified as '{classification}'. Average: {new_average:.2f}")
-                if classification == "Up":
-                    up_values.append(new_average)
+            if new_values is not None:
+                up_normalized_signal = []
+                down_normalized_signal = []
+                new_up_values = new_values
+                new_down_values = new_values
+                for _ in range(len(up_values)):
+                    result = normalized_cross_correlation(new_up_values, up_values)
+                    up_normalized_signal.append(result)
+                    first_element = new_up_values.pop(0)
+                    new_up_values.append(first_element)
+                up_maximum_value = max(up_normalized_signal)
+                for _ in range(len(down_values)):
+                    result = normalized_cross_correlation(new_down_values, down_values)
+                    down_normalized_signal.append(result)
+                    first_element = new_down_values.pop(0)
+                    new_down_values.append(first_element)
+                down_maximum_value = max(down_normalized_signal)
+                
+                st.write(up_maximum_value,down_maximum_value)
+                if up_maximum_value > down_maximum_value:
+                    st.write("classify for up in test ",i+1)
                 else:
-                    down_values.append(new_average)
+                    st.write("classify for down in test ",i+1)
             else:
                 st.warning(f"No valid numerical values found in the new file {i+1}.")
-
+    st.write(tests)
+    st.write("first test is the bigger value")
     # Display updated total averages for up and down values
     st.write("### Summary after Classifying New Signals:")
     # st.write("Up Values:", up_values)
