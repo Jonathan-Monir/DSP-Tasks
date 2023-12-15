@@ -172,6 +172,8 @@ def main():
 
     fir_coefficients = []
 
+    signal_file = st.file_uploader(f'Upload Signal {1}', type=['txt'], key=f'signal_uploader_{0}')
+    
     if st.button("Design Filter"):
         fir_coefficients = design_fir_filter(filter_type, fs, stopband_attenuation, fc1, fc2, transition_band)
         st.line_chart(fir_coefficients, use_container_width=True)
@@ -181,7 +183,6 @@ def main():
     input_signals = []
     if st.button("Apply Filter"):
 
-        signal_file = st.file_uploader(f'Upload Signal {1}', type=['txt'], key=f'signal_uploader_{0}')
 
         if signal_file is not None:
             uploaded_data = signal_file.read().decode('utf-8')
