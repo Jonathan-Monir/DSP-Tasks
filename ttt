@@ -1,8 +1,9 @@
 import streamlit as st
 import numpy as np
-from scipy.fft import fft
-from scipy.fft import ifft
+import math
 
+def format_samples(signal):
+    return "\n".join([f"{x} {y}" for x, y in enumerate(signal)])
 
 def parse_signal_data(data):
     x_values, y_values = [], []
@@ -14,81 +15,173 @@ def parse_signal_data(data):
                 x_values.append(float(x))
                 y_values.append(float(y))
             except ValueError:
+                # Handle invalid data here (e.g., skip or log it)
                 pass
     return x_values, y_values
 
-def dft(input_signal):
-    fft_result = fft(input_signal)
-    magnitude = np.abs(fft_result)
-    phase = np.angle(fft_result)
-    return magnitude, phase
+def custom_convolve(input_signal, filter_kernel):
+    input_len = len(input_signal)
+    filter_len = len(filter_kernel)
 
-def idft(amplitude, phase):
-    # Combine amplitude and phase to create a complex signal
-    complex_signal = amplitude * np.exp(1j * np.array(phase))
+    # Check if the input or filter is empty
+    if input_len == 0 or filter_len == 0:
+        raise ValueError("Input signals cannot be empty for convolution.")
 
-    # Perform the IFFT
-    result = ifft(complex_signal)
+    # Output signal length will be input_len + filter_len - 1
+    output_len = input_len + filter_len - 1
+
+    # Initialize the output signal with zeros
+    output_signal = [0] * output_len
+
+    # Perform convolution
+    for i in range(output_len):
+        for j in range(filter_len):
+            # Check if the indices are valid for both signals
+            if i - j >= 0 and i - j < input_len:
+                output_signal[i] += input_signal[i - j] * filter_kernel[j]
+
+    return output_signal
+
+def window_type(stopband_attenuation):
+    if stopband_attenuation < 21:
+        return 'rectangular', 0.9
+    elif stopband_attenuation < 44:
+         return 'hanning', 3.1
+    elif stopband_attenuation < 53:
+        return 'hamming', 3.3
+    else:
+         return 'blackman', 5.5
+
+def low_pass(n, fc, fs, tw):
+    new_fc = (fc + (tw/2))/fs
+    if n == 0:
+        return 2 * new_fc
+    else:
+        return 2 * new_fc * np.sin(2 * np.pi * new_fc * n) / (2 * np.pi * new_fc * n)
+
+def high_pass(n, fc, fs, tw):
+    new_fc = (fc - (tw/2))/fs
+    if n == 0:
+        return 1 - (2 * new_fc)
+    else:
+        return -2 * new_fc * np.sin(2 * np.pi * new_fc * n) / (2 * np.pi * new_fc * n)
+
+def band_pass(n, fc_low, fc_high, fs, tw):
+    return low_pass(n, fc_high, fs, tw) - low_pass(n, fc_low, fs, tw)
+
+def band_reject(n, fc_low, fc_high, fs, tw):
+    return 1 - band_pass(n, fc_low, fc_high, fs, tw)
+
+def rectangle(n, N):
+    return 1
+
+def hanning(n, N):
+    return 0.5 + 0.5 * np.cos((2 * np.pi * n) / N)
+
+def hamming(n, N):
+    return 0.54 + 0.46 * np.cos((2 * np.pi * n) / N)
+
+def blackman(n, N):
+    return 0.42 + 0.5 * np.cos((2 * np.pi * n) / (N - 1)) + 0.08 * np.cos((4 * np.pi * n) / (N - 1))
+
+def design_fir_filter(filter_type, fs, stopband_attenuation, fc1, fc2, transition_band):
+    result = []
+    delta_f = transition_band / fs
+    window, ntw = window_type(stopband_attenuation)
+    N = math.ceil(ntw / delta_f)
+    if N % 2 == 0:
+        N = N + 1
+
+    start_value = int(-N/2)
+    step = 1
+    for i in range(start_value, int(N/2)+1, int(step)):
+        w, h = None, None
+
+        if window == "rectangular":
+            w = rectangle(i, N)
+        elif window == "hamming":
+            w = hamming(i, N)
+        elif window == "hanning":
+            w = hanning(i, N)
+        else:
+            w = blackman(i, N)
+
+        if filter_type == "lowpass":
+            h = low_pass(i, fc1, fs, transition_band)
+        elif filter_type == "highpass":
+            h = high_pass(i, fc1, fs, transition_band)
+        elif filter_type == "bandpass":
+            h = band_pass(i, fc1, fc2, fs, transition_band)
+        else:
+            h = band_reject(i, fc1, fc2, fs, transition_band)
+
+        result.append((i, h * w))
+
     return result
 
-def convolve_freq_domain(signal1, signal2):
-    # Calculate the size for zero-padding
-    size = len(signal1) + len(signal2) - 1
-
-    # Zero-pad the input signals
-    signal1_padded = np.pad(signal1, (0, size - len(signal1)))
-    signal2_padded = np.pad(signal2, (0, size - len(signal2)))
-
-    # Compute DFT of input signals
-    mag1, phase1 = dft(signal1_padded)
-    mag2, phase2 = dft(signal2_padded)
-
-    # Perform element-wise multiplication in the frequency domain
-    mag_result = mag1 * mag2
-    phase_result = phase1 + phase2
-
-    # Perform IDFT on the result to get the convolution in time domain
-    convolution_result = idft(mag_result, phase_result)
-
-    return convolution_result
-
-def ConvTest(Your_indices,Your_samples): 
-    """
-    Test inputs
-    InputIndicesSignal1 =[-2, -1, 0, 1]
-    InputSamplesSignal1 = [1, 2, 1, 1 ]
-    
-    InputIndicesSignal2=[0, 1, 2, 3, 4, 5 ]
-    InputSamplesSignal2 = [ 1, -1, 0, 0, 1, 1 ]
-    """
-    
-    expected_indices=[-2, -1, 0, 1, 2, 3, 4, 5, 6]
-    expected_samples = [1, 1, -1, 0, 0, 3, 3, 2, 1 ]
-
-    
-    if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
-        print("Conv Test case failed, your signal have different length from the expected one")
+def Compare_Signals(file_name, Your_indices, Your_samples):    
+    expected_indices = []
+    expected_samples = []
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L=line.strip()
+            if len(L.split(' ')) == 2:
+                L = line.split(' ')
+                V1 = int(L[0])
+                V2 = float(L[1])
+                expected_indices.append(V1)
+                expected_samples.append(V2)
+                line = f.readline()
+            else:
+                break
+    print("Current Output Test file is: ")
+    print(file_name)
+    print("\n")
+    if (len(expected_samples) != len(Your_samples)) and (len(expected_indices) != len(Your_indices)):
+        st.write(len(expected_samples), len(Your_samples))
+        print("Test case failed, your signal has a different length from the expected one")
         return
     for i in range(len(Your_indices)):
-        if(Your_indices[i]!=expected_indices[i]):
-            print("Conv Test case failed, your signal have different indicies from the expected one") 
+        if Your_indices[i] != expected_indices[i]:
+            print("Test case failed, your signal has different indices from the expected one") 
             return
     for i in range(len(expected_samples)):
         if abs(Your_samples[i] - expected_samples[i]) < 0.01:
             continue
         else:
-            print("Conv Test case failed, your signal have different values from the expected one") 
+            print("Test case failed, your signal has different values from the expected one") 
             return
-    print("Conv Test case passed successfully")
-def main():
-    st.title("Convolution Operation")
+    print("Test case passed successfully")
 
-    num_signals = st.number_input("How many signals do you want to convolve?", min_value=2, value=2, key="num_signals")
+
+def main():
+    st.title("FIR Filter Design with Streamlit")
+    filter_type = st.selectbox("Select filter type", ["lowpass", "highpass", "bandpass", "bandreject"])
+    fs = st.number_input("Enter sampling frequency (FS): ")
+    stopband_attenuation = st.number_input("Enter stopband attenuation: ")
+    fc1 = st.number_input("Enter cutoff frequency (FC): ")
+    fc2 = 0
+    if filter_type == "bandreject" or filter_type == "bandpass":
+        fc2 = st.number_input("Enter cutoff frequency (FC): ")
+    transition_band = st.number_input("Enter transition band width: ")
+
+    fir_coefficients = []
+
+    if st.button("Design Filter"):
+        fir_coefficients = design_fir_filter(filter_type, fs, stopband_attenuation, fc1, fc2, transition_band)
+        st.line_chart(fir_coefficients, use_container_width=True)
+        Compare_Signals(r"C:\Users\Tasneem\Downloads\LPFCoefficients.txt", [idx for idx, _ in fir_coefficients],
+                        [val for _, val in fir_coefficients])
 
     input_signals = []
+    if st.button("Apply Filter"):
 
-    for i in range(num_signals):
-        signal_file = st.file_uploader(f'Upload Signal {i + 1}', type=['txt'], key=f'signal_uploader_{i}')
+        signal_file = st.file_uploader(f'Upload Signal {1}', type=['txt'], key=f'signal_uploader_{0}')
 
         if signal_file is not None:
             uploaded_data = signal_file.read().decode('utf-8')
@@ -96,18 +189,17 @@ def main():
             x_values, y_values = parse_signal_data(lines)
             input_signals.append((x_values, y_values))
 
-    if len(input_signals) == 2:
-        signal1 = input_signals[0][1]
-        signal2 = input_signals[1][1]
-        convolved_signal = convolve_freq_domain(signal1, signal2)
+            st.write(input_signals)
 
-        st.subheader("Convolved Signal:")
-        # Print convolved signal in the specified format
-        for x, y in enumerate(convolved_signal):
-            st.write(f"{x} {y}")
+            if fir_coefficients:
+                convolved_signal = custom_convolve(input_signals[0][1], [val for _, val in fir_coefficients])
 
-        # Run ConvTest and display result
-        ConvTest(list(range(len(convolved_signal))), convolved_signal)
+                st.write("Input Signal:")
+                st.text(format_samples(input_signals[0][1]))
+                st.write("Convolved Signal:")
+                st.text(format_samples(convolved_signal))
+            else:
+                st.warning("Please design the filter first before applying.")
 
 if __name__ == "__main__":
     main()
