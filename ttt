@@ -19,28 +19,25 @@ def parse_signal_data(data):
                 pass
     return x_values, y_values
 
-def custom_convolve(input_signal, filter_kernel):
+def convolve(input_signal, filter_kernel, start_value):
     input_len = len(input_signal)
     filter_len = len(filter_kernel)
 
-    # Check if the input or filter is empty
     if input_len == 0 or filter_len == 0:
         raise ValueError("Input signals cannot be empty for convolution.")
 
-    # Output signal length will be input_len + filter_len - 1
     output_len = input_len + filter_len - 1
 
-    # Initialize the output signal with zeros
     output_signal = [0] * output_len
 
-    # Perform convolution
     for i in range(output_len):
         for j in range(filter_len):
-            # Check if the indices are valid for both signals
             if i - j >= 0 and i - j < input_len:
                 output_signal[i] += input_signal[i - j] * filter_kernel[j]
 
-    return output_signal
+    output_indices = list(range(start_value, start_value + output_len))
+
+    return output_indices, output_signal
 
 def window_type(stopband_attenuation):
     if stopband_attenuation < 21:
@@ -117,7 +114,7 @@ def design_fir_filter(filter_type, fs, stopband_attenuation, fc1, fc2, transitio
 
         result.append((i, h * w))
 
-    return result
+    return result ,start_value
 
 def Compare_Signals(file_name, Your_indices, Your_samples):    
     expected_indices = []
@@ -164,41 +161,38 @@ def main():
     filter_type = st.selectbox("Select filter type", ["lowpass", "highpass", "bandpass", "bandreject"])
     fs = st.number_input("Enter sampling frequency (FS): ")
     stopband_attenuation = st.number_input("Enter stopband attenuation: ")
-    fc1 = st.number_input("Enter cutoff frequency (FC): ")
+    fc1 = st.number_input("Enter cutoff frequency (FC1): ")
     fc2 = 0
     if filter_type == "bandreject" or filter_type == "bandpass":
-        fc2 = st.number_input("Enter cutoff frequency (FC): ")
+        fc2 = st.number_input("Enter cutoff frequency (FC2): ")
     transition_band = st.number_input("Enter transition band width: ")
 
-    fir_coefficients = []
+    fir_coefficients, start_value = design_fir_filter(filter_type, fs, stopband_attenuation, fc1, fc2, transition_band)
 
     signal_file = st.file_uploader(f'Upload Signal {1}', type=['txt'], key=f'signal_uploader_{0}')
     
-    if st.button("Design Filter"):
-        fir_coefficients = design_fir_filter(filter_type, fs, stopband_attenuation, fc1, fc2, transition_band)
+
+    if st.button("Show Filter Coefficients"):
         st.line_chart(fir_coefficients, use_container_width=True)
-        Compare_Signals(r"C:\Users\Tasneem\Downloads\LPFCoefficients.txt", [idx for idx, _ in fir_coefficients],
-                        [val for _, val in fir_coefficients])
+        for i, value in fir_coefficients:
+            st.write(f"{i} {value:.8f}")
 
     input_signals = []
+
     if st.button("Apply Filter"):
-
-
         if signal_file is not None:
             uploaded_data = signal_file.read().decode('utf-8')
             lines = uploaded_data.split('\n')
             x_values, y_values = parse_signal_data(lines)
             input_signals.append((x_values, y_values))
 
-            st.write(input_signals)
-
             if fir_coefficients:
-                convolved_signal = custom_convolve(input_signals[0][1], [val for _, val in fir_coefficients])
+                convolved_signal = convolve(input_signals[0][1], [val for _, val in fir_coefficients], start_value)
 
-                st.write("Input Signal:")
-                st.text(format_samples(input_signals[0][1]))
                 st.write("Convolved Signal:")
-                st.text(format_samples(convolved_signal))
+                st.write(len(convolved_signal[1]))  # Print the length of the convolved signal
+                for i, value in zip(convolved_signal[0], convolved_signal[1]):
+                    st.write(f"{i} {value:.8f}")  # Print index and value with 8 decimal places
             else:
                 st.warning("Please design the filter first before applying.")
 
