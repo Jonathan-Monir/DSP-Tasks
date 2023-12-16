@@ -141,19 +141,19 @@ def Compare_Signals(file_name, Your_indices, Your_samples):
     print("\n")
     if (len(expected_samples) != len(Your_samples)) and (len(expected_indices) != len(Your_indices)):
         st.write(len(expected_samples), len(Your_samples))
-        print("Test case failed, your signal has a different length from the expected one")
+        st.write("Test case failed, your signal has a different length from the expected one")
         return
     for i in range(len(Your_indices)):
         if Your_indices[i] != expected_indices[i]:
-            print("Test case failed, your signal has different indices from the expected one") 
+            st.write("Test case failed, your signal has different indices from the expected one") 
             return
     for i in range(len(expected_samples)):
         if abs(Your_samples[i] - expected_samples[i]) < 0.01:
             continue
         else:
-            print("Test case failed, your signal has different values from the expected one") 
+            st.write("Test case failed, your signal has different values from the expected one at: ",i) 
             return
-    print("Test case passed successfully")
+    st.write("Test case passed successfully")
 
 
 def main():
@@ -185,7 +185,8 @@ def main():
             lines = uploaded_data.split('\n')
             x_values, y_values = parse_signal_data(lines)
             input_signals.append((x_values, y_values))
-
+            indices = []
+            samples = []
             if fir_coefficients:
                 convolved_signal = convolve(input_signals[0][1], [val for _, val in fir_coefficients], start_value)
 
@@ -193,6 +194,10 @@ def main():
                 st.write(len(convolved_signal[1]))  # Print the length of the convolved signal
                 for i, value in zip(convolved_signal[0], convolved_signal[1]):
                     st.write(f"{i} {value:.8f}")  # Print index and value with 8 decimal places
+                    indices.append(i)
+                    samples.append(value)
+                print(samples)
+                Compare_Signals(r"files\FIR test cases\Testcase 6\ecg_band_pass_filtered.txt",indices,samples)
             else:
                 st.warning("Please design the filter first before applying.")
 
