@@ -14,7 +14,7 @@ file_b = st.text_input('Enter file path B',value = r"files\Practical task 2\B")
 # file_tests = st.text_input('Enter file path tests',value = r"files\Practical task 2\Test Folder")
 
 Fs = st.number_input("Fs", 1,200,value = 10)
-new_Fs = st.number_input("Fs", 1,200,value = 30)
+new_Fs = st.number_input("new Fs", 1,200,value = 30)
 st.subheader("Resampling")
 
 L = st.number_input("Upsampling (L)",0.0,100000.0,step=1.0,value=1.0)
@@ -136,7 +136,7 @@ def Upsample(signals, L):
 
         for _ in range(L-1):
             upsampled_signals.append(0)
-    # upsampled_signals = convolve(upsampled_signals,Y,start_value)
+    upsampled_signals = convolve(upsampled_signals,Y,start_value)
     return upsampled_signals
 
 def resample(signals,L,M):
@@ -175,10 +175,15 @@ def ECG(filepath_A, filepath_B, Fs, min_F, max_F, new_Fs):
     A_signals = [convolve(signal, [val for _, val in fir_coefficients], start_value)[1] for signal in A_signals]
     B_signals = [convolve(signal, [val for _, val in fir_coefficients], start_value)[1] for signal in B_signals]
 
-    st.plotly_chart(create_plotly_plot())
+    A_signals_indices = [convolve(signal, [val for _, val in fir_coefficients], start_value)[0] for signal in A_signals]
+    B_signals_indices = [convolve(signal, [val for _, val in fir_coefficients], start_value)[0] for signal in B_signals]
+    
+    
     # task 2) resampling
     A_signals = [resample(signal,L,M) for signal in A_signals if new_Fs > 2*np.max(signal)]
     B_signals = [resample(signal,L,M) for signal in B_signals if new_Fs > 2*np.max(signal)]
+
+    st.plotly_chart(create_plotly_plot(A_signals_indices[1], A_signals[1],'da'))
 
     # task 3) remove DC
     A_signals = [RemoveDc(signal) for signal in A_signals]
@@ -197,4 +202,4 @@ def ECG(filepath_A, filepath_B, Fs, min_F, max_F, new_Fs):
     # A_signals = [dct(signal) for signal in A_signals]
     # B_signals = [dct(signal) for signal in B_signals]
 
-ECG(file_a,file_b,Fs,150,250,new_Fs)
+ECG(file_a,file_b,Fs,100,250,new_Fs)

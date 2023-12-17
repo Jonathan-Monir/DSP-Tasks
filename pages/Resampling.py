@@ -42,7 +42,7 @@ class ApplyFilter:
         elif self.window_name == "Hamming":
             transition_width_factor = 3.3
         elif self.window_name == "Blackman":
-            transition_width_factor = 3.5
+            transition_width_factor = 5.5
 
         return transition_width_factor/self.transition_width
 
