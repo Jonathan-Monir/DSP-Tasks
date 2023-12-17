@@ -81,10 +81,8 @@ def normalized_cross_correlation(signal1, signal2):
     
     powered_result = sum(powered_signal1) * sum(powered_signal2)
     
-    print(powered_result)
     result = summed_result / ((1/N) * np.sqrt(powered_result))
-    
-    print(result)
+
 
     return result
 normalized_signal = []

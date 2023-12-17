@@ -21,13 +21,13 @@ if "input_signals" in st.session_state:
     input_signals = st.session_state["input_signals"]
     
 else:
-    st.warning("Please add input signals")
+    pass
     
 if "output_signals" in st.session_state:
     output_signals = st.session_state["output_signals"]
 
 else:
-    st.warning("Please add output signals")
+    pass
 
 operation = st.selectbox("choose the function",["dct","remove dc"])
 
@@ -180,7 +180,7 @@ else:
         st.success("Test case passed successfully")
 
     def dct(input_list):
-        
+        N = len(input_list)
         result = []
 
         for k in range(N):
@@ -193,18 +193,18 @@ else:
         return result
 
 
-    # Example usage
+    # # Example usage
 
-    x_values, y_values, z_values = input_signals[0]
-    N = len(y_values)
-    dct_result = dct(y_values)
-    number_of_coefficients = st.number_input("choose the first number of coefficients",1,N,value=N)
+    # x_values, y_values, z_values = input_signals[0]
+    # N = len(y_values)
+    # dct_result = dct(y_values)
+    # number_of_coefficients = st.number_input("choose the first number of coefficients",1,N,value=N)
 
-    st.table(dct_result[0:number_of_coefficients])
-    st.plotly_chart(Discrete_plot(x_values,dct_result,'dct plot'))
+    # st.table(dct_result[0:number_of_coefficients])
+    # st.plotly_chart(Discrete_plot(x_values,dct_result,'dct plot'))
     
-    SignalSamplesAreEqual(r"files\task 5\DCT\DCT_output.txt",dct_result)
-    if st.button("Download txt file"):
-        with open('output_file', 'w') as file:
-            for i in range(number_of_coefficients):
-                file.write(f'{dct_result[i]:.6f}\n')
+    # SignalSamplesAreEqual(r"files\task 5\DCT\DCT_output.txt",dct_result)
+    # if st.button("Download txt file"):
+    #     with open('output_file', 'w') as file:
+    #         for i in range(number_of_coefficients):
+    #             file.write(f'{dct_result[i]:.6f}\n')
