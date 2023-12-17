@@ -3,6 +3,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+from fractions import Fraction
 
 class ApplyFilter:
     def __init__(self,stop_band,transition_width,pass_band_frequency,Fs):
@@ -65,6 +66,51 @@ class ApplyFilter:
         Y = [self.H[n] * self.W[n] for n in self.X]
         return Y
 
+def convolve(input_signal, filter_kernel, start_value):
+    input_len = len(input_signal)
+    filter_len = len(filter_kernel)
+
+    if input_len == 0 or filter_len == 0:
+        raise ValueError("Input signals cannot be empty for convolution.")
+
+    output_len = input_len + filter_len - 1
+
+    output_signal = [0] * output_len
+
+    for i in range(output_len):
+        for j in range(filter_len):
+            if i - j >= 0 and i - j < input_len:
+                output_signal[i] += input_signal[i - j] * filter_kernel[j]
+
+    output_indices = list(range(start_value, start_value + output_len))
+
+    return output_indices, output_signal
+
+def Downsample(signals,Y, L, start_value):
+    signals = convolve(signals,Y,start_value)[1]
+    
+    downsampled_data = []
+    for i in range(0, len(signals), M):
+        downsampled_data.extend(signals[i:i+1])
+    
+    return downsampled_data
+
+def Upsample(signals,Y, L, start_value):
+    upsampled_signals = []
+    for index, signal in enumerate(signals):
+        upsampled_signals.append(signal)
+        
+        if index == len(signals) - 1:
+            break
+
+        for _ in range(L-1):
+            upsampled_signals.append(0)
+    upsampled_signals = convolve(upsampled_signals,Y,start_value)
+    return upsampled_signals
+
+def has_decimal(float_number):
+    return float_number != int(float_number)
+
 def parse_signal_data(data):
     x_values, y_values, z_values = [], [], []
     for line in data:
@@ -123,11 +169,37 @@ for i in range(num_signals):
         # Ensure that the values are correctly converted to float when parsing the data
         output_signals.append((output_x_values, output_y_values, output_z_values))
 
+Fs = st.number_input("Sampling frequencty",0.0,100000.0,step=10.0,value=8.0)
+stop_band = st.number_input("stop band",0.0,100000.0,step=0.0,value=50.0)
 pass_band_frequency = st.number_input("pass band frequency",0.0,100000.0,step=0.5,value=1.5)
 Transition_width = st.number_input("Transition width",0.0,50000.0,step=0.25,value=0.5)
-stop_band = st.number_input("stop band",0.0,100000.0,step=0.0,value=50.0)
-Fs = st.number_input("Sampling frequencty",0.0,100000.0,step=10.0,value=8.0)
+
+Fs = 8000
+stop_band = 50
+pass_band_frequency = 1500
+Transition_width = 500
 
 applied = ApplyFilter(stop_band, Transition_width,pass_band_frequency,Fs)
-st.write(applied.X)
-st.write(applied.Y)
+if st.checkbox("upsampling or downsampling"):
+    L = st.number_input("Upsampling (L)",0.0,100000.0,step=1.0,value=1.0)
+    M = st.number_input("Downsampling (M)",0.0,100000.0,step=1.0,value=1.0)
+    Resampled_signals = input_signals[0][1]
+    if has_decimal(L):
+        fraction_object = Fraction(L)
+        L = fraction_object.numerator
+        M = M * fraction_object.denominator
+    elif has_decimal(M):
+        fraction_object = Fraction(M)
+        M = fraction_object.numerator
+        L = L * fraction_object.denominator
+
+    L = int(L)
+    M = int(M)
+    
+    if L > 1:
+        Resampled_signals = Upsample(input_signals[0][1], applied.Y, L, applied.X[0])[1]
+
+    if M > 1:
+        Resampled_signals = Downsample(Resampled_signals, applied.Y, L, applied.X[0])
+
+    indices = range(applied.X[0], applied.X[0] + len(Resampled_signals) + 1)
