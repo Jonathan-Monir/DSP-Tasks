@@ -142,7 +142,46 @@ def parse_signal_data(data):
                 pass
     return x_values, y_values, z_values
 
-    
+
+def Compare_Signals(file_name, Your_indices, Your_samples):    
+    expected_indices = []
+    expected_samples = []
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L=line.strip()
+            if len(L.split(' ')) == 2:
+                L = line.split(' ')
+                V1 = int(L[0])
+                V2 = float(L[1])
+                expected_indices.append(V1)
+                expected_samples.append(V2)
+                line = f.readline()
+            else:
+                break
+    print("Current Output Test file is: ")
+    print(file_name)
+    print("\n")
+    if (len(expected_samples) != len(Your_samples)) and (len(expected_indices) != len(Your_indices)):
+        st.write(len(expected_samples), len(Your_samples))
+        st.write("Test case failed, your signal has a different length from the expected one")
+        return
+    for i in range(len(Your_indices)):
+        if Your_indices[i] != expected_indices[i]:
+            st.write("Test case failed, your signal has different indices from the expected one") 
+            return
+    for i in range(len(expected_samples)):
+        if abs(Your_samples[i] - expected_samples[i]) < 0.01:
+            continue
+        else:
+            st.write("Test case failed, your signal has different values from the expected one at: ",i) 
+            return
+    st.write("Test case passed successfully")
+
 st.subheader("Input Signals")
 
 num_signals = st.number_input("How many signals do you want to analyze?", min_value=1, value=1, key="num_signals")
@@ -203,3 +242,4 @@ if st.checkbox("upsampling or downsampling"):
         Resampled_signals = Downsample(Resampled_signals, applied.Y, L, applied.X[0])
 
     indices = range(applied.X[0], applied.X[0] + len(Resampled_signals) + 1)
+
