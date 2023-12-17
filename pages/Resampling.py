@@ -4,6 +4,8 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 from fractions import Fraction
+import plotly.express as px
+import pandas as pd
 
 class ApplyFilter:
     def __init__(self,stop_band,transition_width,pass_band_frequency,Fs):
@@ -66,6 +68,11 @@ class ApplyFilter:
         Y = [self.H[n] * self.W[n] for n in self.X]
         return Y
 
+def create_plotly_plot(x, y, plot_name):
+    df = pd.DataFrame({'x': x, 'y': y})
+    fig = px.line(df, x='x', y='y', title=plot_name)
+    return fig
+
 def convolve(input_signal, filter_kernel, start_value):
     input_len = len(input_signal)
     filter_len = len(filter_kernel)
@@ -86,8 +93,9 @@ def convolve(input_signal, filter_kernel, start_value):
 
     return output_indices, output_signal
 
-def Downsample(signals,Y, L, start_value):
-    signals = convolve(signals,Y,start_value)[1]
+def Downsample(signals,Y, L, start_value,M):
+    if L < 2:
+        signals = convolve(signals,Y,start_value)[1]
     
     downsampled_data = []
     for i in range(0, len(signals), M):
@@ -166,11 +174,12 @@ def Compare_Signals(file_name, Your_indices, Your_samples):
     print("Current Output Test file is: ")
     print(file_name)
     print("\n")
-    if (len(expected_samples) != len(Your_samples)) and (len(expected_indices) != len(Your_indices)):
-        st.write(len(expected_samples), len(Your_samples))
+    if (len(expected_samples) != len(Your_samples)) or (len(expected_indices) != len(Your_indices)):
+        st.write(len(expected_indices), len(Your_indices))
         st.write("Test case failed, your signal has a different length from the expected one")
         return
     for i in range(len(Your_indices)):
+        
         if Your_indices[i] != expected_indices[i]:
             st.write("Test case failed, your signal has different indices from the expected one") 
             return
@@ -239,7 +248,18 @@ if st.checkbox("upsampling or downsampling"):
         Resampled_signals = Upsample(input_signals[0][1], applied.Y, L, applied.X[0])[1]
 
     if M > 1:
-        Resampled_signals = Downsample(Resampled_signals, applied.Y, L, applied.X[0])
+        Resampled_signals = Downsample(Resampled_signals, applied.Y, L, applied.X[0],M)
 
-    indices = range(applied.X[0], applied.X[0] + len(Resampled_signals) + 1)
+    indices = range(applied.X[0], applied.X[0] + len(Resampled_signals))
+test_path = st.selectbox("please select the task file to compare signals: ", ["Testcase 1\Sampling_Down.txt","Testcase 2\Sampling_Up.txt","Testcase 3\Sampling_Up_Down.txt"])
+filepath = r"files\Practical task\Practical task 1\Sampling test cases" +"\\" + test_path
+st.write(Resampled_signals)
+Compare_Signals(filepath,indices,Resampled_signals)
 
+if test_path == "Testcase 3\Sampling_Up_Down.txt":
+    st.error("error due to extra space in files")
+
+if st.checkbox("Show graph"):
+
+    fig = create_plotly_plot(indices, Resampled_signals, test_path.split(".")[0].split("\\")[1])
+    st.plotly_chart(fig)
