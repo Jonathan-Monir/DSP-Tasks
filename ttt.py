@@ -64,10 +64,12 @@ def high_pass(n, fc, fs, tw):
         return -2 * new_fc * np.sin(2 * np.pi * new_fc * n) / (2 * np.pi * new_fc * n)
 
 def band_pass(n, fc_low, fc_high, fs, tw):
-    return low_pass(n, fc_high, fs, tw) - low_pass(n, fc_low, fs, tw)
+    return low_pass(n, fc_high, fs, tw) + high_pass(n, fc_low, fs, tw)
 
 def band_reject(n, fc_low, fc_high, fs, tw):
-    return 1 - band_pass(n, fc_low, fc_high, fs, tw)
+    return (low_pass(n, fc_low, fs, tw) + high_pass(n, fc_high, fs, tw))
+
+
 
 def rectangle(n, N):
     return 1
