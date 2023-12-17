@@ -1,5 +1,4 @@
 import streamlit as st
-import numpy as np
 import math
 import matplotlib.pyplot as plt
 import numpy as np
@@ -222,10 +221,10 @@ stop_band = st.number_input("stop band",0.0,100000.0,step=0.0,value=50.0)
 pass_band_frequency = st.number_input("pass band frequency",0.0,100000.0,step=0.5,value=1.5)
 Transition_width = st.number_input("Transition width",0.0,50000.0,step=0.25,value=0.5)
 
-Fs = 8000
-stop_band = 50
-pass_band_frequency = 1500
-Transition_width = 500
+# Fs = 8000
+# stop_band = 50
+# pass_band_frequency = 1500
+# Transition_width = 500
 
 applied = ApplyFilter(stop_band, Transition_width,pass_band_frequency,Fs)
 if st.checkbox("upsampling or downsampling"):
@@ -249,8 +248,10 @@ if st.checkbox("upsampling or downsampling"):
 
     if M > 1:
         Resampled_signals = Downsample(Resampled_signals, applied.Y, L, applied.X[0],M)
-
+        
     indices = range(applied.X[0], applied.X[0] + len(Resampled_signals))
+    if M == 0 and L == 0:
+        st.error("M and L shouldn't be = 0")
 test_path = st.selectbox("please select the task file to compare signals: ", ["Testcase 1\Sampling_Down.txt","Testcase 2\Sampling_Up.txt","Testcase 3\Sampling_Up_Down.txt"])
 filepath = r"files\Practical task\Practical task 1\Sampling test cases" +"\\" + test_path
 st.write(Resampled_signals)

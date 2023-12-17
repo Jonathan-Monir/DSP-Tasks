@@ -41,6 +41,8 @@ def quantize_signal(input_signal, num_levels):
     
     return quantized_signal, binary_mapping
 
+
+
 # Function to create a Matplotlib plot
 def create_matplotlib_plot(x, y, plot_name, continuous=True):
     fig, ax = plt.subplots()
