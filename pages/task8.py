@@ -150,18 +150,42 @@ elif operation == "Fast correlation":
     from scipy.fft import ifft
 
     def dft(input_signal):
-        fft_result = fft(input_signal)
-        magnitude = np.abs(fft_result)
-        phase = np.angle(fft_result)
+        N = len(input_signal)
+        magnitude = np.zeros(N)
+        phase = np.zeros(N)
+
+        for k in range(N):
+            real_part = 0.0
+            imag_part = 0.0
+
+            for n in range(N):
+                angle = 2 * np.pi * k * n / N
+                real_part += input_signal[n] * np.cos(angle)
+                imag_part -= input_signal[n] * np.sin(angle)
+
+            magnitude[k] = np.sqrt(real_part**2 + imag_part**2)
+            phase[k] = np.arctan2(imag_part, real_part)
+
         return magnitude, phase
     
     
     def idft(amplitude, phase):
-        # Combine amplitude and phase to create a complex signal
-        complex_signal = amplitude * np.exp(1j * np.array(phase))
+        N = len(amplitude)
+        complex_signal = np.zeros(N, dtype=complex)
 
-        # Perform the IFFT
-        result = ifft(complex_signal)
+        for k in range(N):
+            real_part = 0.0
+            imag_part = 0.0
+
+            for n in range(N):
+                angle = 2 * np.pi * k * n / N
+                real_part += amplitude[n] * np.cos(angle)
+                imag_part += amplitude[n] * np.sin(angle)
+
+            complex_signal[k] = real_part + 1j * imag_part
+
+        # Perform the Inverse FFT
+        result = np.fft.ifft(complex_signal)
         return result
     
     X = dft(signal1)

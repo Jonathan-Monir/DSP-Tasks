@@ -85,6 +85,7 @@ def normalized_cross_correlation(signal1, signal2):
 
 
     return result
+    
 normalized_signal = []
 if operation == "normalize cross correlation" or operation == "time delay":
     for _ in range(len(signal2)):

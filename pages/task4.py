@@ -13,11 +13,22 @@ def dft(input_signal):
     return magnitude, phase
 
 def idft(amplitude, phase):
-        # Combine amplitude and phase to create a complex signal
-    complex_signal = amplitude * np.exp(1j * np.array(phase))
+    N = len(amplitude)
+    complex_signal = np.zeros(N, dtype=complex)
 
-    # Perform the IFFT
-    result = ifft(complex_signal)
+    for k in range(N):
+        real_part = 0.0
+        imag_part = 0.0
+
+        for n in range(N):
+            angle = 2 * np.pi * k * n / N
+            real_part += amplitude[n] * np.cos(angle)
+            imag_part += amplitude[n] * np.sin(angle)
+
+        complex_signal[k] = real_part + 1j * imag_part
+
+    # Perform the Inverse FFT
+    result = np.fft.ifft(complex_signal)
     return result
 
 def format_samples(signal):

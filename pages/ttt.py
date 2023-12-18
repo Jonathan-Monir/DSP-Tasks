@@ -199,7 +199,9 @@ def main():
                     indices.append(i)
                     samples.append(value)
                 print(samples)
-                Compare_Signals(r"files\FIR test cases\Testcase 6\ecg_band_pass_filtered.txt",indices,samples)
+                test_path = st.selectbox("please select the task file to compare signals: ", ["Testcase 1\LPFCoefficients.txt","Testcase 2\ecg_low_pass_filtered.txt","Testcase 3\HPFCoefficients.txt","Testcase 4\ecg_high_pass_filtered.txt","Testcase 5\BPFCoefficients.txt","Testcase 6\ecg_band_pass_filtered.txt","Testcase 7\BSFCoefficients.txt","Testcase 8\ecg_band_stop_filtered.txt"])
+                filepath = r"files\FIR test cases" +"\\" + test_path
+                Compare_Signals(filepath,indices,samples)
             else:
                 st.warning("Please design the filter first before applying.")
 

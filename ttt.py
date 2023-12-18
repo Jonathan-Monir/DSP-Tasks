@@ -33,6 +33,7 @@ def convolve(input_signal, filter_kernel, start_value):
     for i in range(output_len):
         for j in range(filter_len):
             if i - j >= 0 and i - j < input_len:
+                
                 output_signal[i] += input_signal[i - j] * filter_kernel[j]
 
     output_indices = list(range(start_value, start_value + output_len))
