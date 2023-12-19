@@ -22,13 +22,13 @@ class ApplyFilter:
         self.Y = self.apply_function_Y()
         
     def window_define(self):
-        if self.stop_band < 21:
+        if self.stop_band <= 21:
             return "Rectangular"
-        elif self.stop_band < 44:
+        elif self.stop_band <= 44:
             return "Hanning"
-        elif self.stop_band < 53:
+        elif self.stop_band <= 53:
             return "Hamming"
-        elif self.stop_band < 74:
+        elif self.stop_band <= 74:
             return "Blackman"
         else:
             return 0
@@ -119,36 +119,28 @@ def has_decimal(float_number):
     return float_number != int(float_number)
 
 def parse_signal_data(data):
-    x_values, y_values, z_values = [], [], []
+    x_values, y_values = [], []
     for line in data:
-        if ',' in line:
-            parts = line.strip().split(',')
-        else:
-            parts = line.strip().split()
+        parts = line.strip().split()
         if len(parts) == 2:
             x, y = parts
-            x = x.replace('f', '')
-            y = y.replace('f', '')
+            try:
+                # Convert to float and append to the lists
+                x_values.append(float(x))
+                y_values.append(float(y))
+            except ValueError:
+                # Handle invalid data here (e.g., skip or log it)
+                pass
+        elif len(parts) > 2:
+            # If there are more than two parts, try to extract the first two as x and y
+            x, y = parts[:2]
             try:
                 x_values.append(float(x))
                 y_values.append(float(y))
             except ValueError:
                 # Handle invalid data here (e.g., skip or log it)
                 pass
-        elif len(parts) == 3:
-            x, y, z = parts
-            x = x.replace('f', '')
-            y = y.replace('f', '')
-            z = z.replace('f', '')
-            try:
-                x_values.append(float(x))
-                y_values.append(float(y))
-                z_values.append(float(z))
-            except ValueError:
-                # Handle invalid data here (e.g., skip or log it)
-                pass
-    return x_values, y_values, z_values
-
+    return x_values, y_values
 
 def Compare_Signals(file_name, Your_indices, Your_samples):    
     expected_indices = []
@@ -204,17 +196,17 @@ for i in range(num_signals):
     if signal_file is not None:
         uploaded_data = signal_file.read().decode('utf-8')
         lines = uploaded_data.split('\n')
-        x_values, y_values, z_values = parse_signal_data(lines)
+        x_values, y_values = parse_signal_data(lines)
         
-        input_signals.append((x_values, y_values, z_values))
+        input_signals.append((x_values, y_values))
     
     if output_signal_file is not None:
         uploaded_data = output_signal_file.read().decode('utf-8')
         lines = uploaded_data.split('\n')
-        output_x_values, output_y_values, output_z_values = parse_signal_data(lines)
+        output_x_values, output_y_values= parse_signal_data(lines)
 
         # Ensure that the values are correctly converted to float when parsing the data
-        output_signals.append((output_x_values, output_y_values, output_z_values))
+        output_signals.append((output_x_values, output_y_values))
 
 Fs = st.number_input("Sampling frequencty",0.0,100000.0,step=10.0,value=8.0)
 stop_band = st.number_input("stop band",0.0,100000.0,step=0.0,value=50.0)
@@ -227,6 +219,7 @@ Transition_width = st.number_input("Transition width",0.0,50000.0,step=0.25,valu
 # Transition_width = 500
 
 applied = ApplyFilter(stop_band, Transition_width,pass_band_frequency,Fs)
+
 if st.checkbox("upsampling or downsampling"):
     L = st.number_input("Upsampling (L)",0.0,100000.0,step=1.0,value=1.0)
     M = st.number_input("Downsampling (M)",0.0,100000.0,step=1.0,value=1.0)
@@ -257,8 +250,8 @@ filepath = r"files\Practical task\Practical task 1\Sampling test cases" +"\\" + 
 st.write(Resampled_signals)
 Compare_Signals(filepath,indices,Resampled_signals)
 
-if test_path == "Testcase 3\Sampling_Up_Down.txt":
-    st.error("error due to extra space in files")
+# if test_path == "Testcase 3\Sampling_Up_Down.txt":
+#     st.error("error due to extra space in files")
 
 if st.checkbox("Show graph"):
 

@@ -1,4 +1,4 @@
-# import streamlit as st
+import streamlit as st
 import numpy as np
 import math
 
@@ -33,7 +33,6 @@ def convolve(input_signal, filter_kernel, start_value):
     for i in range(output_len):
         for j in range(filter_len):
             if i - j >= 0 and i - j < input_len:
-                
                 output_signal[i] += input_signal[i - j] * filter_kernel[j]
 
     output_indices = list(range(start_value, start_value + output_len))
@@ -65,7 +64,12 @@ def high_pass(n, fc, fs, tw):
         return -2 * new_fc * np.sin(2 * np.pi * new_fc * n) / (2 * np.pi * new_fc * n)
 
 def band_pass(n, fc_low, fc_high, fs, tw):
-    return low_pass(n, fc_high, fs, tw) + high_pass(n, fc_low, fs, tw)
+    if n == 0:
+        fc_low = (fc_low - (tw/2))/fs
+        fc_high = (fc_high + (tw/2))/fs
+        return 2* (fc_high-fc_low)
+        
+    return high_pass(n, fc_low, fs, tw) + low_pass(n, fc_high, fs, tw) 
 
 def band_reject(n, fc_low, fc_high, fs, tw):
     return (low_pass(n, fc_low, fs, tw) + high_pass(n, fc_high, fs, tw))
@@ -148,12 +152,14 @@ def Compare_Signals(file_name, Your_indices, Your_samples):
         return
     for i in range(len(Your_indices)):
         if Your_indices[i] != expected_indices[i]:
-            st.write("Test case failed, your signal has different indices from the expected one") 
+            
             return
     for i in range(len(expected_samples)):
         if abs(Your_samples[i] - expected_samples[i]) < 0.01:
+            
             continue
         else:
+            st.write(Your_samples[i],expected_samples[i])
             st.write("Test case failed, your signal has different values from the expected one at: ",i) 
             return
     st.write("Test case passed successfully")
@@ -174,9 +180,13 @@ def main():
 
     signal_file = st.file_uploader(f'Upload Signal {1}', type=['txt'], key=f'signal_uploader_{0}')
     
-
+    test_path = st.selectbox("please select the task file to compare signals: ", ["Testcase 1\LPFCoefficients.txt","Testcase 2\ecg_low_pass_filtered.txt","Testcase 3\HPFCoefficients.txt","Testcase 4\ecg_high_pass_filtered.txt","Testcase 5\BPFCoefficients.txt","Testcase 6\ecg_band_pass_filtered.txt","Testcase 7\BSFCoefficients.txt","Testcase 8\ecg_band_stop_filtered.txt"])
+    filepath = r"files\FIR test cases" +"\\" + test_path
     if st.button("Show Filter Coefficients"):
         st.line_chart(fir_coefficients, use_container_width=True)
+        if "Coefficients" in filepath:
+            st.write(fir_coefficients[-1])
+            Compare_Signals(filepath,range(start_value,start_value+len([value[1] for value in fir_coefficients])),[value[1] for value in fir_coefficients])
         for i, value in fir_coefficients:
             st.write(f"{i} {value:.8f}")
 
@@ -192,15 +202,18 @@ def main():
             samples = []
             if fir_coefficients:
                 convolved_signal = convolve(input_signals[0][1], [val for _, val in fir_coefficients], start_value)
+                if "Coefficients" not in filepath: 
+                    Compare_Signals(filepath,indices,samples)
 
                 st.write("Convolved Signal:")
-                st.write(len(convolved_signal[1]))  # Print the length of the convolved signal
                 for i, value in zip(convolved_signal[0], convolved_signal[1]):
                     st.write(f"{i} {value:.8f}")  # Print index and value with 8 decimal places
                     indices.append(i)
                     samples.append(value)
-                print(samples)
-                Compare_Signals(r"files\FIR test cases\Testcase 6\ecg_band_pass_filtered.txt",indices,samples)
+                st.write(samples)
+                
+
+                
             else:
                 st.warning("Please design the filter first before applying.")
 

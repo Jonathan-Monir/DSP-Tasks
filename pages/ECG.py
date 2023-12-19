@@ -40,9 +40,19 @@ def normalized_cross_correlation(signal1, signal2):
     
     result = summed_result / ((1/N) * np.sqrt(powered_result))
 
-
+    
     return result
 
+def correlation_calculator(signal1,signal2):
+    normalized_signal = []
+    for i in range(len(signal2)):
+        print(i)
+        result = normalized_cross_correlation(signal1, signal2)
+        normalized_signal.append(result)
+        signal2 = np.roll(signal2, -1)  
+    # Convert the list to a NumPy array if needed
+    normalized_signal = np.array(normalized_signal)
+    return normalized_signal
 # def dft(input_signal):
 #     N = len(input_signal)
 #     magnitude = np.zeros(N)
@@ -99,9 +109,20 @@ def idft(amplitude, phase):
     result = ifft(complex_signal)
     return result
 
-def correlation(signal):
-    X = dft(signal)
-    Y = dft(signal) 
+def correlation(signal1,signal2):
+    
+    if len(signal1) != len(signal2):
+        
+        
+        # Calculate the size for zero-padding
+        size = len(signal1) + len(signal2) - 1
+
+        # Zero-pad the input signals
+        signal1 = np.pad(signal1, (0, size - len(signal1)))
+        signal2 = np.pad(signal2, (0, size - len(signal2)))
+    
+    X = dft(signal1)
+    Y = dft(signal2) 
     
     Y = list(Y)
     Y[1] = np.array(Y[1]) * -1
@@ -171,29 +192,27 @@ def has_decimal(float_number):
     return float_number != int(float_number)
 
 
-def convolve_freq_domain()
-#     return result
-# def dct(input_list):
-#     N = len(input_list)
-#     result = []
-#     for k in range(N):
-#         sum_result = 0
-#         for n in range(N):
-#             sum_result += input_list[n] * math.cos(math.pi / (4 * N) * (2 * n - 1) * (2 * k - 1))
-            
-#         result.append(math.sqrt(2 / N) * sum_result)
-        
-#     return result
 
+def convolve_freq_domain(signal1, signal2):
+    # Calculate the size for zero-padding
+    size = len(signal1) + len(signal2) - 1
 
-    # Example usage
-    signal1 = [1, 2, 3, 4, 5]
-    signal2 = [2, 4, 6, 8, 10]
+    # Zero-pad the input signals
+    signal1_padded = np.pad(signal1, (0, size - len(signal1)))
+    signal2_padded = np.pad(signal2, (0, size - len(signal2)))
 
-    correlation = normalized_cross_correlation(signal1, signal2)
+    # Compute DFT of input signals
+    mag1, phase1 = dft(signal1_padded)
+    mag2, phase2 = dft(signal2_padded)
 
-    print(f"Normalized cross-correlation: {correlation}")
+    # Perform element-wise multiplication in the frequency domain
+    mag_result = mag1 * mag2
+    phase_result = phase1 + phase2
 
+    # Perform IDFT on the result to get the convolution in time domain
+    convolution_result = idft(mag_result, phase_result)
+
+    return convolution_result
 
     
 def dct(input_list):
@@ -257,14 +276,14 @@ def resample(signals,L,M, Y, start_value):
     
     return Resampled_signals
 
-def ECG(filepath_A, filepath_B, Fs, min_F, max_F, new_Fs):
+def ECG(filepath_A, filepath_B, filepath_test, Fs, min_F, max_F, new_Fs):
 
     InputStopBandAttenuation = 50
     InputTransitionBand = 500
 
     A_signals = path_to_list(filepath_A)
     B_signals = path_to_list(filepath_B)
-    
+    test_signals = path_to_list(filepath_test)
     # task 1) filter the signal
     fir_coefficients, start_value = design_fir_filter("bandpass", Fs, InputStopBandAttenuation, min_F, max_F, InputTransitionBand)
 
@@ -311,18 +330,19 @@ def ECG(filepath_A, filepath_B, Fs, min_F, max_F, new_Fs):
 
     st.plotly_chart(create_plotly_plot(A_signals_indices[0], A_signals[0],'first file in A after applying normalize'))
 
+    # task 6) get only the needed coefficients
+    A_signals = [signal[1250:1500] for signal in A_signals]
+    B_signals = [signal[1250:1500] for signal in B_signals]
+
+    A_signals_indices = [signal[1250:1500] for signal in A_signals_indices]
+    B_signals_indices = [signal[1250:1500] for signal in B_signals_indices]
+    st.plotly_chart(create_plotly_plot(A_signals_indices[0], A_signals[0],'first file in A after needed coefficients'))
+    
     # task 5) auto correlation
     # normalized_cross_correlation
-    A_signals = [correlation(signal) for signal in A_signals]
-    B_signals = [correlation(signal) for signal in B_signals]
+    A_signals = [correlation_calculator(signal,signal) for signal in A_signals]
+    B_signals = [correlation_calculator(signal,signal) for signal in B_signals]
     st.plotly_chart(create_plotly_plot(A_signals_indices[0], A_signals[0],'first file in A after applying correlation'))
-    # task 6) get only the needed coefficients
-    A_signals = [signal[1250:1876] for signal in A_signals]
-    B_signals = [signal[1250:1876] for signal in B_signals]
-
-    A_signals_indices = [signal[1250:1876] for signal in A_signals_indices]
-    B_signals_indices = [signal[1250:1876] for signal in B_signals_indices]
-    st.plotly_chart(create_plotly_plot(A_signals_indices[0], A_signals[0],'first file in A after needed coefficients'))
 
     # task 7) DCT
     A_signals = [dct(signal) for signal in A_signals]
@@ -330,10 +350,16 @@ def ECG(filepath_A, filepath_B, Fs, min_F, max_F, new_Fs):
     st.plotly_chart(create_plotly_plot(A_signals_indices[0], A_signals[0],'first file in A after dct'))
     
     # task 8)
-    convolution_result = convolve_freq_domain(A_signals,B_signals)
-    st.write(B_signals)
-    A_result = normalized_cross_correlation(convolution_result,file_tests[0])
-    B_result = normalized_cross_correlation(convolution_result,file_tests[1])
 
-    st.write("result of (A) is : ", A_result,"\n result of (B) is : ", B_result)
-ECG(file_a,file_b,Fs,100,250,new_Fs)
+    A_signals = np.array(A_signals)
+    B_signals = np.array(B_signals)
+
+    A_signals = np.average(A_signals, axis=0)
+    B_signals = np.average(B_signals, axis=0)
+
+    st.write(correlation_calculator(A_signals,test_signals[0])[0])
+    st.write(correlation_calculator(A_signals,test_signals[1])[0])
+    st.write(correlation_calculator(B_signals,test_signals[1])[0])
+    st.write(correlation_calculator(B_signals,test_signals[0])[0])
+
+ECG(file_a,file_b,file_tests,Fs,100,250,new_Fs)
